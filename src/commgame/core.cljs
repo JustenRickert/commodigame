@@ -18,7 +18,7 @@
          :time-last-tick (time/now)
 
          :user {:money 0
-                :money-delta 0.001
+                :money-delta 0.1
                 :commodities (map #(assoc %
                                           :quan 0
                                           ;; reagent is more efficient when each
