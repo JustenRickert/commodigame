@@ -17,8 +17,6 @@ body {
     width: 500px;
     grid-template-columns: repeat(5, auto);
     grid-template-rows: repeat(5, auto);
-    /* grid-auto-columns: 150px; */
-    /* grid-auto-flow: column; */
     grid-gap: 10px;
     background-color: #fff;
     color: #444;
@@ -30,5 +28,4 @@ body {
     border-radius: 5px;
     padding: 20px;
     text-align: center;
-    /* font-size: 150%; */
 }
