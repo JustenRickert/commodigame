@@ -3,14 +3,28 @@
 ;; comm is commodity, quan is quantity, comb is combination. Very difficult
 ;; words to spell a lot!
 
-(defonce b-comm-data-before-id
-  {"sand"  {:price 0.25}
-   "sugar" {:price 0.50}
-   "hops"  {:price 0.50}
-   "water" {:price 0.10}
-   "fruit" {:price 1.00}})
+(defonce ^:private b-comm-data-before-id
+  {"sand"
+   {:price       0.25
+    :merch-price 12.00}
 
-(defonce c-comm-data-before-id
+   "sugar"
+   {:price       0.50
+    :merch-price 24.00}
+
+   "hops"
+   {:price       0.50
+    :merch-price 24.00}
+
+   "water"
+   {:price       0.10
+    :merch-price 5.00}
+
+   "fruit"
+   {:price       1.00
+    :merch-price 48.00}})
+
+(defonce ^:private c-comm-data-before-id
   {"glass" ; single input combinational commodities
    {:price       2.15
     :input       [{:title "sand" :quan 5}]
@@ -29,7 +43,7 @@
    "ice water" ; multiple input combinational commodities
    {:price       0.90
     :input       [{:title "water" :quan 4}
-                  {:title "ice"   :quan 1}]
+                  {:title "ice" :quan 1}]
     :output-quan 5}
 
    "fruit drink"
@@ -41,28 +55,28 @@
 
    "cold fruit drink"
    {:price       3.10
-    :input       [{:title "ice"         :quan 1}
+    :input       [{:title "ice" :quan 1}
                   {:title "fruit drink" :quan 2}]
     :output-quan 2}
 
    "beer"
    {:price      4.00
-    :input      [{:title "hops"  :quan 1}
+    :input      [{:title "hops" :quan 1}
                  {:title "water" :quan 2}
                  {:title "glass" :quan 3}]
     :ouput-quan 5}
 
    "lager"
    {:price       3.95
-    :input       [{:title "hops"  :quan 1}
+    :input       [{:title "hops" :quan 1}
                   {:title "water" :quan 2}
-                  {:title "ice"   :quan 1}
+                  {:title "ice" :quan 1}
                   {:title "glass" :quan 4}]
     :output-quan 6}
 
    "radler"
    {:price       5.35
-    :input       [{:title "beer"             :quan 1}
+    :input       [{:title "beer" :quan 1}
                   {:title "cold fruit drink" :quan 1}]
     :output-quan 2}})
 

@@ -1,4 +1,4 @@
-(ns commgame.game
+(ns commgame.user
   (:require [commgame.commodities :as comm]
 
             [cljs-time.core :as time]
@@ -8,11 +8,10 @@
 
 (defn add-zero-quantity [item] (assoc item :quan 0))
 
+;; Note that atom is a reagent atom here.
 (defonce time-state
   (atom {:begin-time (time/now)
          :time-last-tick (time/now)} ))
-
-;; Note that atom is a reagent atom here.
 (defonce user-state
   (atom {:money       0
          :money-delta 0.1
@@ -71,14 +70,11 @@
       (js/console.log "Not enough money to buy" title "!"))))
 
 (defn c-comm-combinable? [title]
-  (let [inputs (get-in (:comm @user-state) [title :input])
+  (let [input (get-in (:comm @user-state) [title :input])
         user-comms (:comm @user-state)]
-    (loop [input inputs]
-      (cond
-        (> (:quan (first input))
-           (:quan (get user-comms (:title (first input))))) false
-        (empty? input) true
-        :else (recur (rest input))))))
+    (every? #(>= (:quan (get user-comms (:title %)))
+                (:quan %))
+            input)))
 
 (defn user-combine-for-comm [title]
   (doseq [input (get-in @user-state [:comm title :input])]

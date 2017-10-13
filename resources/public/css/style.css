@@ -1,5 +1,43 @@
 /* some style */
 
+.sidebar {
+    background-color: grey;
+    color: black;
+    text-align: center;
+    padding: 2rem 1rem;
+}
+
+a {
+    color: white;
+}
+
+a:hover {
+    color: black;
+}
+
+@media (min-width: 48em) {
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 6rem;
+        text-align: left;
+    }
+}
+
+.content {
+    /* padding-top: 1rem; */
+    padding-bottom: 4rem;
+}
+
+@media (min-width: 48rem) {
+    .content {
+        margin-left: 6rem;
+        margin-right: 4rem;
+    }
+}
+
 body {
     margin: 40px;
 }
