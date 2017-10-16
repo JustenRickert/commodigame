@@ -1,8 +1,8 @@
 (ns commgame.render
-  (:require [cljs-time.core :as time]
-            [commgame.user :as user]
+  (:require [commgame.user :as user]
             [commgame.commodities :as comm]
             [commgame.merchant :as merchant]
+            [commgame.vendor :as vendor]
             [goog.string :as string]))
 
 ;;; HELPER
@@ -24,7 +24,6 @@
         quan      (:quan item)]
     [:div.comm title " " (if (> quan 1) (pluralize what-type) what-type)
      [:br] quan]))
-
 (defn- comm-li [title comm] (list-item :comm title comm))
 (defn- merchant-li [title merch] (list-item :merch title merch))
 
@@ -34,14 +33,18 @@
          what-data
          h3
          empty-message] (case type-key
-                          :comm  [comm-li
-                                  (:comm @user/state)
-                                  "Inventory Commodities"
-                                  "No commodities"]
-                          :merch [merchant-li
-                                  @merchant/state
-                                  "Employed Merchants"
-                                  "No employee merchants"]
+                          :comm   [comm-li
+                                   (:comm @user/state)
+                                   "Inventory Commodities"
+                                   "No commodities"]
+                          :c-comm [comm-li
+                                   (user/c-comm)
+                                   "Inventory Combinational Commodities"
+                                   "No combinational commodities to sell"]
+                          :merch  [merchant-li
+                                   @merchant/state
+                                   "Employed Merchants"
+                                   "No employee merchants"]
                           (throw (js/Error. "type-key provided matches nothing. Add one?")))]
     [:div [:h3 h3]
      [:div.user-comm
@@ -53,8 +56,8 @@
         (if (empty? component)
           [:span empty-message]
           component))]]))
-
 (defn- comm-block-ul [] (block-style-list :comm))
+(defn- c-comm-block-ul [] (block-style-list :c-comm))
 (defn- merchant-block-ul [] (block-style-list :merch))
 
 ;;; BUY
@@ -66,16 +69,15 @@
          what-fn] (case type-key
                     :comm  ["commodity"
                             :price
-                            user/user-buy-one-comm]
+                            user/buy-one-comm]
                     :merch ["merchant"
                             :merch-price
-                            (partial merchant/add! 1)]
+                            (partial merchant/possibly-purchase! 1)]
                     (throw (js/Error. "type-key provided matches nothing. Add one?")))]
     [:div.comm
      [:div title [:br] "$" (string/format "%.2f" (what-price item))]
      [:button {:on-click #(what-fn title)}
       "💲"]]))
-
 (defn- buy-comm-button [[title comm]] (buy-button :comm title comm))
 (defn- buy-merchant-button [[title merch]] (buy-button :merch title merch))
 
@@ -96,15 +98,50 @@
       (for [[title item] data]
         ^{:key (str "btn" title)}
         [buy-button what-key title item])]]))
-
 (defn- b-comm-market [] (market :b-comm))
 (defn- merchant-market [] (market :merch))
+
+;; SELL
+
+(defn- sell-button
+  [type-key title item]
+  (let [[what-fn] (case type-key
+                    :c-comm  [(partial vendor/sell-comm! 1)]
+                    (throw (js/Error. "type-key provided matches nothing. Add one?")))]
+    [:div.comm
+     [:div title [:br] "$" (string/format "%.2f" (:price item))]
+     [:button {:on-click #(what-fn title)}
+      "💲"]]))
+
+(defn- vendor
+  [type-key]
+  (let [[data
+         h3
+         what-key] (case type-key
+                     :c-comm [comm/c-comm-data
+                              "Type C Commodities Vendor"
+                              :c-comm]
+                     (throw (js/Error "type-key provided matches nothing. Add one?")))]
+    [:div [:h3 h3]
+     [:div.user-comm
+      (let [component
+            (doall
+             (remove nil?
+                     (for [[title item] data]
+                       (let [appropriately-priced-item (get-in @user/state [:comm title])]
+                         (when (> (:quan appropriately-priced-item) 0)
+                           ^{:key (str "sell-btn" title)}
+                           [sell-button what-key title appropriately-priced-item])))))]
+        (if (empty? component)
+          [:span "No combinational commodities to sell!"]
+          component)
+        )]]))
+(defn c-comm-vendor [] (vendor :c-comm))
 
 ;;; TODO COMBINE SECTION
 
 (defn- combine-comm-button
   [[title comm]]
-  (js/console.log "c-comm-button" title "rerender")
   (let [inputs (:input comm)]
     [:div.comm
      [:span (:output-quan comm) " " title [:br] "@" [:br]
@@ -117,9 +154,6 @@
 (defn- comb-comm-market []
   [:div [:h3 "Type C Commodities Manufacturing"]
    [:div.user-comm
-    ;; Need this silly `doall-remove-nil?` wrapper for `for` because reagent
-    ;; complains. TODO create a simple macro called `comp-for` or something to
-    ;; bypass the issue!
     (let [component (doall
                      (remove nil?
                              (for [[title comm] comm/c-comm-data]
@@ -130,33 +164,39 @@
         [:span "No possible combinations yet!"]
         component))]])
 
-(defn- user-money [money]
-  [:div.money "$" (string/format "%.2f" money)])
+(defn- user-money []
+  [:div.money "$" (string/format "%.2f" (:money @user/state))])
 
 ;;; RENDER PAGE
 
 (defn user-page []
   [:div.page
-   [user-money (:money @user/state)]
+   [user-money]
    [comm-block-ul]
    [b-comm-market]
    [comb-comm-market]])
 
+(defn merchant-timers []
+  [:ul
+   (for [[title merch] @merchant/state]
+     (if (> (:quan merch) 0)
+       ^{:key (str "timer" title)}
+       [:li title " " (string/format "%.1f" (:time-until merch))]))])
+
 (defn merchant-page []
   [:div.page
-   [user-money (:money @user/state)]
+   [user-money]
    [merchant-block-ul]
    [merchant-market]
-   [:div
-    [:ul
-     (let [now (time/now)]
-       (for [[title merch] @merchant/state]
-         (let [diff (time/in-seconds (time/interval (:last-time merch)
-                                                    now))]
-           ^{:key (str "li-merch" title)}
-           [:li (str title " " (- (:interval merch) diff))])))]]
-   [:div "What's up?"]])
+   [merchant-timers]])
 
-(defn user-upgrade-page []
+(defn vendor-page []
+  [:div.page
+   [user-money]
+   [c-comm-block-ul]
+   [c-comm-vendor]])
+
+(defn upgrade-page []
   [:div.page
    [:div "What's up?"]])
+

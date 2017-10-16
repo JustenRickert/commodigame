@@ -2,33 +2,37 @@
   (:require [cljs-time.core :as time]
             [cljs-time.format :as time-format]
             [goog.string :as string]
-            [reagent.core :as reagent :refer [atom]]
+            [reagent.core :as r]
 
             [commgame.commodities :as comm]))
 
 (defn add-zero-quantity [item] (assoc item :quan 0))
 
-;; Note that atom is a reagent atom here.
-(defonce time-state
-  (atom {:begin-time (time/now)
-         :time-last-tick (time/now)}))
-(def state
-  (atom {:money       0
-         :money-delta 0.1
-         :comm        (into {}
-                            (for [[title item] (merge comm/b-comm-data
-                                                      comm/c-comm-data)]
-                              {title (assoc item :quan 0)}))}))
+(defonce perf-time
+  (atom (js/performance.now)))
+
+;; performance.now returns ms, and there are 60 fps.
+(defn time-between-frame []             ;in seconds
+  (-> (- (js/performance.now) @perf-time)
+      (/ 1000)))
+
+(defn reset-perf-time! []
+  (reset! perf-time (js/performance.now)))
+
+(defonce state
+  (r/atom {:money        0
+           :money-factor 0.05
+           :comm         (into {}
+                               (for [[title item] (merge comm/b-comm-data
+                                                         comm/c-comm-data)]
+                                 {title (assoc item :quan 0)}))}))
+
+(defn c-comm []
+  (into {}
+        (for [[title _] comm/c-comm-data]
+          {title (get-in @state [:comm title])})))
 
 (def time-formatter (time-format/formatter "yyyy/MM/dd hh:mm:ss UTC"))
-(defn format-time [time-key]
-  (time-format/unparse time-formatter (time-key @time-state)))
-
-#_(defn seconds-since-begin-time []
-    (time/in-seconds (time/interval (:begin-time @app-state) (time/now))))
-
-#_(defn seconds-since-last-tick []
-    (time/in-seconds (time/interval (:time-last-tick @app-state) (time/now))))
 
 ;; `!` denotes state mutation.
 (defn give-user-money! [amt]
@@ -54,14 +58,15 @@
 (defn timer-loop! []
   (do
     ;; increment user money
-    (let [user @state]
-      (swap! state update :money #(+ (:money user) (:money-delta user))))
+    (swap! state update :money #(+ % (* (time-between-frame)
+                                        (:money-factor @state)))))
     ;; increment things to display the time
-    (swap! time-state update :time-last-tick time/now)
-    (swap! time-state update :time-now time/now))
+    ;; (swap! time-state update :time-last-tick time/now)
+    ;; (swap! time-state update :time-now time/now))
+  (reset-perf-time!)
   (js/requestAnimationFrame timer-loop!))
 
-(defn user-buy-one-comm [title]
+(defn buy-one-comm [title]
   (let [comm-buying (get (:comm @state) title)]
     (if (> (:money @state) (:price comm-buying))
       (do

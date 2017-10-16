@@ -1,7 +1,8 @@
 (ns commgame.core
   (:require-macros [secretary.core :refer [defroute]])
   (:import goog.History)
-  (:require [reagent.core :as reagent :refer [atom]]
+  (:require [clojure.string :as string]
+            [reagent.core :as reagent :refer [atom]]
             [secretary.core :as secretary]
             [goog.events :as events]
             [goog.history.EventType :as EventType]
@@ -28,66 +29,80 @@
   (secretary/set-config! :prefix "#")
   (defroute "/" [] (swap! app-state assoc :page :welcome))
   (defroute "/welcome" [] (swap! app-state assoc :page :welcome))
-  (defroute "/merchant" [] (swap! app-state assoc :page :merchant))
   (defroute "/user" [] (swap! app-state assoc :page :user))
+  (defroute "/merchant" [] (swap! app-state assoc :page :merchant))
+  (defroute "/vendor" [] (swap! app-state assoc :page :vendor))
   (defroute "/upgrade" [] (swap! app-state assoc :page :upgrade))
   (hook-browser-navigation!))
 
-;; TODO Make a programmatic way to make a lists of links, filtering out the
-;; current page. Probably not required, but it's an easy improvement to learn
-;; from.
+(def href-data
+  [{:route "#/welcome" :title "Welcome"}
+   {:route "#/user" :title "User"}
+   {:route "#/merchant" :title "Merchant"}
+   {:route "#/vendor" :title "Vendor"}
+   {:route "#/upgrade" :title "Upgrades"}])
+
+(defn- href-datum-to-a [d]
+  ^{:key (string/lower-case (:title d))}
+  [:a {:href (:route d)} (:title d) [:br]])
+
+(defn- list-all-href-but [current-title]
+  [:div (->> href-data
+             (filter #(not= (:title %) current-title))
+             (map href-datum-to-a))])
 
 (defn merchant []
   [:div
    [:div.sidebar
-    [:a {:href "#/welcome"} "Welcome"][:br]
-    [:a {:href "#/user"} "User"] [:br]
-    [:a {:href "#/upgrade"} "Upgrades"]]
+    [list-all-href-but "Merchant"]]
    [:div.content
     [:h1 "Merchant"]
     [render/merchant-page]]])
 
+(defn vendor []
+  [:div
+   [:div.sidebar
+    [list-all-href-but "Vendor"]]
+   [:div.content
+    [:h1 "Vendor"]
+    [render/vendor-page]]])
+
 (defn upgrade []
   [:div
    [:div.sidebar
-    [:a {:href "#/welcome"} "Welcome"][:br]
-    [:a {:href "#/merchant"} "Merchant"][:br]
-    [:a {:href "#/user"} "User"]]
+    [list-all-href-but "Upgrades"]]
    [:div.content
     [:h1 "Upgrades"]
-    [render/user-upgrade-page]]])
-
-(defn welcome []
-  [:div
-   [:div.sidebar
-    [:a {:href "#/merchant"} "Merchant"] [:br]
-    [:a {:href "#/user"} "User"] [:br]
-    [:a {:href "#/upgrade"} "Upgrades"] [:br]]
-   [:div.content
-    [:h1 "Welcome!"]]])
+    [render/upgrade-page]]])
 
 (defn user []
   [:div
    [:div.sidebar
-    [:a {:href "#/welcome"} "Welcome"] [:br]
-    [:a {:href "#/merchant"} "Merchant"] [:br]
-    [:a {:href "#/upgrade"} "Upgrades"]]
+    [list-all-href-but "User"]]
    [:div.content
     [:h1 "User"]
     [render/user-page]]])
 
-(defmulti current-page #(@app-state :page))
-(defmethod current-page :default []
-  [welcome])
-(defmethod current-page :upgrade []
-  [upgrade])
-(defmethod current-page :merchant []
-  [merchant])
-(defmethod current-page :welcome []
-  [welcome])
-(defmethod current-page :user []
-  [user])
+(defn welcome []
+  [:div
+   [:div.sidebar
+    [list-all-href-but "Welcome"]]
+   [:div.content
+    [:h1 "Welcome!"]
+    [:p "Here are the basics:"]
+    [:ol
+     [:li "Purchase basic commodities (type B commodities) as yourself (the user)"]
+     [:li "Combine basic commodities into combinational commodities (type C commodities)"]
+     [:li "Sell the commodities (as a vendor)"]]
+    [:p "When you've made enough money doing the above, you can attain employees to do the tedious work for you. Then (hopefully) you'll have you some great fun!"]]])
 
+(defmulti current-page #(@app-state :page))
+(defmethod current-page :default [] [welcome])
+(defmethod current-page :user [] [user])
+(defmethod current-page :merchant [] [merchant])
+(defmethod current-page :vendor [] [vendor])
+(defmethod current-page :welcome [] [welcome])
+(defmethod current-page :upgrade [] [upgrade])
 
 (app-routes)
 (reagent/render-component [current-page]
@@ -95,9 +110,8 @@
 (user/timer-loop!)
 (merchant/timer-loop!)
 
-#_(defn on-js-reload
+(defn on-js-reload
   []
   ;; optionally touch your app-state to force rerendering depending on
   ;; your application
-  (swap! app-state update-in [:__figwheel_counter] inc)
-)
+  #_(swap! app-state update-in [:__figwheel_counter] inc))
