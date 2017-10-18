@@ -1,4 +1,4 @@
-(ns commgame.table
+(ns commgame.component.table
   (:require [reagent.core :as r]
             [commgame.state.user :as user]
             [commgame.state.data :as data]))
