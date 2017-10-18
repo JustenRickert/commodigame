@@ -8,9 +8,7 @@
             [goog.history.EventType :as EventType]
             [secretary.core :as secretary]
 
-            [commgame.commodities :as comm]
-            [commgame.user :as user]
-            [commgame.merchant :as merchant]
+            [commgame.loop :as loop]
             [commgame.render :as render]))
 
 (enable-console-print!)
@@ -107,8 +105,7 @@
 (app-routes)
 (reagent/render-component [current-page]
                           (. js/document (getElementById "app")))
-(user/timer-loop!)
-(merchant/timer-loop!)
+(loop/game!)
 
 (defn on-js-reload
   []

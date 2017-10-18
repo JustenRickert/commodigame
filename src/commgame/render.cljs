@@ -1,9 +1,11 @@
 (ns commgame.render
-  (:require [commgame.user :as user]
-            [commgame.commodities :as comm]
-            [commgame.merchant :as merchant]
-            [commgame.vendor :as vendor]
-            [goog.string :as string]))
+  (:require [commgame.state.user :as user]
+            [commgame.state.data :as data]
+            [commgame.state.merchant :as merchant]
+            [commgame.state.vendor :as vendor]
+            [commgame.component.table :as table]
+            [goog.string :as string]
+            [reagent.core :as r]))
 
 ;;; HELPER
 
@@ -69,10 +71,10 @@
          what-fn] (case type-key
                     :comm  ["commodity"
                             :price
-                            user/buy-one-comm]
+                            user/buy-one-comm!]
                     :merch ["merchant"
                             :merch-price
-                            (partial merchant/possibly-purchase! 1)]
+                            (partial merchant/possibly-buy! 1)]
                     (throw (js/Error. "type-key provided matches nothing. Add one?")))]
     [:div.comm
      [:div title [:br] "$" (string/format "%.2f" (what-price item))]
@@ -86,7 +88,7 @@
   (let [[data
          h3
          what-key] (case type-key
-                     :b-comm [comm/b-comm-data
+                     :b-comm [data/b-comm
                               "Type B Commodities Market"
                               :comm]
                      :merch  [@merchant/state
@@ -118,7 +120,7 @@
   (let [[data
          h3
          what-key] (case type-key
-                     :c-comm [comm/c-comm-data
+                     :c-comm [data/c-comm
                               "Type C Commodities Vendor"
                               :c-comm]
                      (throw (js/Error "type-key provided matches nothing. Add one?")))]
@@ -148,7 +150,7 @@
       (for [input inputs]
         (str " " (:quan input) " " (:title input)))]
      [:br]
-     [:button {:on-click #(user/user-combine-for-comm title)}
+     [:button {:on-click #(user/user-combine-for-comm! title)}
       "🔧"]]))
 
 (defn- comb-comm-market []
@@ -156,7 +158,7 @@
    [:div.user-comm
     (let [component (doall
                      (remove nil?
-                             (for [[title comm] comm/c-comm-data]
+                             (for [[title comm] data/c-comm]
                                (when (user/c-comm-combinable? title)
                                  ^{:key (str "comb btn" title)}
                                  [combine-comm-button [title comm]]))))]
@@ -164,7 +166,7 @@
         [:span "No possible combinations yet!"]
         component))]])
 
-(defn- user-money []
+(defn user-money []
   [:div.money "$" (string/format "%.2f" (:money @user/state))])
 
 ;;; RENDER PAGE
@@ -172,8 +174,9 @@
 (defn user-page []
   [:div.page
    [user-money]
-   [comm-block-ul]
+   #_[comm-block-ul]
    [b-comm-market]
+   [table/comm-table]
    [comb-comm-market]])
 
 (defn merchant-timers []

@@ -1,0 +1,134 @@
+
+* Introduction to This File
+  This is an org file. If you're not using Emacs, then this file isn't going to
+  really make any sense.
+  
+  Perquisites:
+  - org-mode
+    
+  I also put my org-mode setup [[*My(Justen) org-mode setup][here]]. There isn't much to it. Org-mode is pretty
+  extensive already, so no-one should need to add much.
+
+  - Tasks :: Here I'm going to put tasks need accomplishing, or general
+             suggestions as to what needs to be done. I'm not full of every good
+             idea either, so if you have a good idea then put it under tasks.
+  - Documentation :: Read this to understand what I'm doing.
+             
+* TODO Documentation
+** directories
+   - state :: Holds the files for holding data within states, as well as methods
+              to mutate that state
+   - component :: Holds the files for constructing reagent components.
+                  Eventually all the components written should sit in this
+                  directory, and then imported by and called in ~render.cljs~. The
+                  game makes forward facing calls according to the directory, if
+                  that makes sense. It should go ~core.cljs~ -> ~render.cljs~ -> [
+                  ~state~, ~component~ ].
+                  
+** state mutation methods
+   - Note taken on [2017-10-17 Tue 19:35] \\
+     Not sure if I like the names of these methods. Pretty preliminary. We'll
+     see.
+   - give-user-money! ::
+   - take-user-money! ::
+   - give-user-comm! ::
+   - buy-one-comm! ::
+   - user-combine-for-comm! ::
+        
+* Tasks
+** TODO graphs and shit
+   :PROPERTIES:
+   :LOCATION: [[file:src/commgame/render.cljs::(ns%20commgame.render][render.cljs]], [[file:src/commgame/table.cljs::(ns%20commgame.table][table.cljs]]
+   :END:
+   - Note taken on [2017-10-17 Tue 19:30] \\
+     Justen: I got one table done. I spent a lot of figuring out how the stupid
+     sorting functions work, and trying to figure out multimethods better. Still
+     can't fully wrap my head around them both, though. I also didn't get to
+     test my understanding of multimethods either because I only finished one
+     table.
+     
+     Still need to create a style sheet for it. You can sort by title, price,
+     and quantity on the table, but it isn't obvious because there are no
+     hovering mouse effects or icons. That shouldn't be too hard to implement,
+     though!
+     
+   First the lists in the render file need to get the fuck out of the code base.
+   It's a much better idea to make everything display nicely it a table. Here's
+   a basic html template. The hiccup style variant shouldn't be that hard to
+   come up with.
+   #+BEGIN_SRC html
+     <table style="width:100%">
+       <tr>
+         <th>Firstname</th>
+         <th>Lastname</th>
+         <th>Age</th>
+       </tr>
+       <tr>
+         <td>Jill</td>
+         <td>Smith</td>
+         <td>50</td>
+       </tr>
+       <tr>
+         <td>Eve</td>
+         <td>Jackson</td>
+         <td>94</td>
+       </tr>
+     </table> 
+   #+END_SRC
+   Furthermore, graphs. We want people to be able to make nice assumptions about
+   the things they're doing in the game, and they're going to need to have
+   reasonably readable graphs to make those assumptions. This is probably going
+   to be a lot harder to do. Might have to import a Clojure graphing library.
+   
+** TODO local storage
+   :PROPERTIES:
+   :LOCATION: FIXME
+   :END:
+   Going to want to allow people to save their progress in the game, so we're
+   going to use local storage methods. The easiest way to do this would be to
+   consolidate every state atom into a single file, then save that state atom in
+   local storage. Probably have periodic saving. It's really not that hard to
+   implement.
+
+   NOTE that it also makes developing kind of silly, because local storage will
+   have to be cleared if there's anything new added to the state.
+   
+** TODO upgrades 
+   :PROPERTIES:
+   :LOCATION: FIXME
+   :END:
+   I want there to be two types of upgrades probably. /Regular/ upgrades to allow
+   merchants to buy cheaper and vendors to sell higher, and /Advanced/ upgrades
+   attained through resetting the game. (If you're not familiar with resetting,
+   play /Cookie Clicker/ for a little while.
+
+   Eventually you'll have to reset, where you'll gain stuff called heavenly
+   chips that give increased production among other things.) The advanced
+   upgrades means that we'll need to establish that portion of the game as well,
+   which will probably be easier with a consolidated game state.
+   
+* My(Justen) org-mode setup
+  I use ~spacemacs~, so if you wanna use ~spacemacs~, set that up and use this. It
+  requires ~evil~. If you find you don't want to use that (probably don't use it),
+  then just ignore the parts that use evil. It's basically just
+  visual-line-mode, which is useful for some things sometimes.
+#+BEGIN_SRC emacs-lisp
+  (defun movement-visual-lines ()
+      "Make evil movement commands move across visual lines instead
+  of logical lines"
+        (define-key evil-normal-state-map (kbd "<remap> <evil-next-line>") 'evil-next-visual-line)
+        (define-key evil-normal-state-map (kbd "<remap> <evil-previous-line>") 'evil-previous-visual-line)
+      (define-key evil-motion-state-map (kbd "<remap> <evil-next-line>") 'evil-next-visual-line)
+      (define-key evil-motion-state-map (kbd "<remap> <evil-previous-line>") 'evil-previous-visual-line)
+      ;; Make horizontal movement cross lines
+      (setq-default evil-cross-lines t))
+
+  (add-hook 'org-mode-hook
+              (lambda nil
+                (movement-visual-lines)
+                (visual-line-mode)
+                (setq org-hide-emphasis-markers t)
+                (push '(?\( . ("\(" . "\)")) evil-surround-pairs-alist)
+                (push '(?\{ . ("\{" . "\}")) evil-surround-pairs-alist)
+                (push '(?\\ . ("\\(" . "\\)")) evil-surround-pairs-alist)))
+#+END_SRC

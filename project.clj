@@ -1,6 +1,6 @@
 (defproject commgame "0.1.1"
   :description "Commodities video game!"
-  :url "http://example.com/FIXME"
+  :url "https://justenrickert.github.io/commodigame/"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
@@ -78,7 +78,7 @@
              ;; :open-file-command "myfile-opener"
 
              ;; if you are using emacsclient you can just use
-             ;; :open-file-command "emacsclient"
+             :open-file-command "emacsclient"
 
              ;; if you want to disable the REPL
              ;; :repl false
