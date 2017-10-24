@@ -22,71 +22,121 @@
 ;;                       quan])
 
 (def start-quan 0)
-(def time-interval-default 0)
+(def time-interval-default 10)
 
 (def manufacturers
-  (r/atom (into
-           {}
-           (for [manufacturer (->> data/c-comm
-                                   (map (fn [[title comm]]
-                                          {:key           (:key comm)
-                                           :type          :manufacturer
-                                           :title         title
-                                           :price         (:manufacturer-price comm)
-                                           :time-interval time-interval-default
-                                           :quan          start-quan})))]
-             [(:title manufacturer) manufacturer]))))
+  (into
+   {}
+   (for [manufacturer (->> data/c-comm
+                           (map (fn [[title comm]]
+                                  {:key           (:key comm)
+                                   :type          :manufacturer
+                                   :title         title
+                                   :price         (:manufacturer-price comm)
+                                   :quan          start-quan})))]
+     [(:title manufacturer) (r/atom manufacturer)])))
+(def manufacturers-time
+  (into
+   {}
+   (for [manuf (->> data/c-comm
+                    (map (fn [[title comm]]
+                           {:title         title
+                            :type          :manufacturer
+                            :time-factor   1
+                            :time-until    0
+                            :time-interval time-interval-default})))]
+     [(:title manuf) (r/atom manuf)])))
 
 (def vendors
-  (r/atom (into
-           {}
-           (for [vendor (->> data/c-comm
-                             (map (fn [[title comm]]
-                                    {:key           (:key comm)
-                                     :type          :vendor
-                                     :title         title
-                                     :price         (:vendor-price comm)
-                                     :time-interval time-interval-default
-                                     :quan          start-quan})))]
-             [(:title vendor) vendor]))))
+  (into
+   {}
+   (for [vendor (->> data/c-comm
+                     (map (fn [[title comm]]
+                            {:key   (:key comm)
+                             :type  :vendor
+                             :title title
+                             :price (:vendor-price comm)
+                             :quan  start-quan})))]
+     [(:title vendor) (r/atom vendor)])))
+(def vendors-time
+  (into
+   {}
+   (for [vendor (->> data/c-comm
+                     (map (fn [[title comm]]
+                            {:title         title
+                             :type          :vendor
+                             :time-factor   1
+                             :time-until    0
+                             :time-interval time-interval-default})))]
+     [(:title vendor) (r/atom vendor)])))
 
 (def processors
-  (r/atom (into
-           {}
-           (for [processor (->> data/b-comm
-                                (map (fn [[title comm]]
-                                       {:key           (:key comm)
-                                        :type          :processor
-                                        :title         title
-                                        :price         (:processor-price comm)
-                                        :time-interval time-interval-default
-                                        :quan          start-quan})))]
-             [(:title processor) processor]))))
+  (into
+   {}
+   (for [processor (->> data/b-comm
+                        (map (fn [[title comm]]
+                               {:key   (:key comm)
+                                :type  :processor
+                                :title title
+                                :price (:processor-price comm)
+                                :quan  start-quan})))]
+     [(:title processor) (r/atom processor)])))
+(def processors-time
+  (into
+   {}
+   (for [processor (->> data/b-comm
+                        (map (fn [[title comm]]
+                               {:title         title
+                                :type          :processor
+                                :time-factor   1
+                                :time-until    0
+                                :time-interval time-interval-default})))]
+     [(:title processor) (r/atom processor)])))
+
+(defn reset-time-until! [employ-type employ-title]
+  (let [employ-time-atom (case employ-type
+                           :processor    (get processors-time employ-title)
+                           :manufacturer (get manufacturers-time employ-title)
+                           :vendor       (get vendors-time employ-title))]
+    (swap! employ-time-atom assoc :time-until
+           (:time-interval @employ-time-atom))))
+
+(defn dec-time!
+  [{time         :time
+    employ-type  :type
+    employ-title :title}]
+  {:pre [(some? time)
+         (some? employ-type)
+         (some? employ-title)]}
+  (let [employ-time-atom (case employ-type
+                           :processor    (get processors-time employ-title)
+                           :manufacturer (get manufacturers-time employ-title)
+                           :vendor       (get vendors-time employ-title))]
+    (swap! employ-time-atom update :time-until
+           #(- % (* time (:time-factor @employ-time-atom))))))
 
 (defn hirable?
   ([employ-type employ-title]
    (hirable? employ-type employ-title 1))
   ([employ-type employ-title amount]
    (let [employ-atom (case employ-type
-                       :processor    processors
-                       :manufacturer manufacturers
-                       :vendor       vendors)
-         employ-cost (get-in @employ-atom [employ-title :price])]
+                       :processor    (get processors employ-title)
+                       :manufacturer (get manufacturers employ-title)
+                       :vendor       (get vendors employ-title))
+         employ-cost (get @employ-atom :price)]
      (> (:amount @comm/money) (* amount employ-cost)))))
-
-(hirable? :processor "glass")
 
 (defn hire!
   ([employ-type employ-title]
    (hire! employ-type employ-title 1))
   ([employ-type employ-title amount]
    (let [employ-atom (case employ-type
-                         :processor    processors
-                         :manufacturer manufacturers
-                         :vendor       vendors)
-         employ-cost (get-in @employ-atom [employ-title :price])]
+                         :processor    (get processors employ-title)
+                         :manufacturer (get manufacturers employ-title)
+                         :vendor       (get vendors employ-title))
+         employ-cost (get @employ-atom :price)]
      (comm/dec-money! {:amount (* amount employ-cost)})
-     (swap! employ-atom update-in [employ-title :quan] #(+ % amount)))))
+     (swap! employ-atom update :quan #(+ % amount)))))
 
 ;; (hire! :processor "sand")
 

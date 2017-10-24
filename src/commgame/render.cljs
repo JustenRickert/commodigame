@@ -188,21 +188,17 @@
 (defn processor-page []
   [:div.page
    [user-money]
-   #_[table/processor]
-   #_[merchant-block-ul]
-   #_[merchant-market]
-   #_[merchant-timers]])
+   [table/processor]])
 
 (defn vendor-page []
   [:div.page
    [user-money]
-   [c-comm-block-ul]
-   [c-comm-vendor]])
+   [table/vendor]])
 
 (defn manufacturing-page []
   [:div.page
    [user-money]
-   #_[table/manufacturers]])
+   [table/manufacturer]])
 
 (defn upgrade-page []
   [:div.page

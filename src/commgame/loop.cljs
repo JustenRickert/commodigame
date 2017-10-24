@@ -1,8 +1,6 @@
 (ns commgame.loop
   (:require [commgame.state.commodities :as comm]
-            [commgame.state.user :as user]
-            [commgame.state.merchant :as merch]
-            [commgame.state.manufacturer :as manufacturer]))
+            [commgame.state.employees :as employ]))
 
 (defonce ^:private perf-time
   (atom (js/performance.now)))
@@ -15,33 +13,58 @@
 (defn- reset-perf-time! []
   (reset! perf-time (js/performance.now)))
 
-#(defn- run-user! []
-  (user/give-user-money! (* (time-in-frame) (:money-factor @user/state))))
-
-(defn- run-merchant! []
+(defn- run-processor! []
   (let [time-in-frame (time-in-frame)]
-    (doseq [[title merch] @merch/state]
-      (if (and (> (:quan merch) 0)
-              (<= (:time-until merch) 0))
+    (doseq [[title proc] employ/processors-time]
+      (if (and (> (-> employ/processors (get title) deref :quan) 0)
+               (<= (:time-until @proc) 0))
         (do
-          (merch/possibly-buy-comm-for-user! (:quan merch) title)
-          (merch/reset-time-until! title merch))
-        (merch/time-delta-dec! title merch time-in-frame)))))
+          (employ/reset-time-until! (:type @proc) title)
+          (comm/possibly-buy! :b-comm
+                              title
+                              (min (comm/max-buyable :b-comm title)
+                                   (-> employ/processors (get title) deref :quan))))
+        (do
+          (employ/dec-time! {:time  time-in-frame
+                             :type  (:type @proc)
+                             :title title}))))))
 
 (defn- run-manufacturer! []
   (let [time-in-frame (time-in-frame)]
-    (doseq [[title man] @manufacturer/state]
-      (if (and (> (:quan man) 0)
-               (<= (:time-until man) 0))
+    (doseq [[title proc] employ/manufacturers-time]
+      (if (and (> (-> employ/manufacturers (get title) deref :quan) 0)
+               (<= (:time-until @proc) 0))
         (do
-          (manufacturer/possibly-manufacture! (:quan man) title)
-          (manufacturer/reset-time-until! title man))
-        (manufacturer/time-delta-dec! title man time-in-frame)))))
+          (employ/reset-time-until! (:type @proc) title)
+          (dotimes [_ (-> employ/manufacturers (get title) deref :quan)]
+            (comm/possibly-combine! title)))
+        (do
+          (employ/dec-time! {:time  time-in-frame
+                             :type  (:type @proc)
+                             :title title}))))))
+
+(defn- run-vendor!
+  "TODO need possibly-sell! and things first"
+  []
+  (let [time-in-frame (time-in-frame)]
+    (doseq [[title proc] employ/vendors-time]
+      (if (and (> (-> employ/vendors (get title) deref :quan) 0)
+               (<= (:time-until @proc) 0))
+        (do
+          (employ/reset-time-until! (:type @proc) title)
+          (comm/possibly-sell! :c-comm
+                               title
+                               (min (comm/max-sellable :c-comm title)
+                                    (-> employ/vendors (get title) deref :quan))))
+        (do
+          (employ/dec-time! {:time  time-in-frame
+                             :type  (:type @proc)
+                             :title title}))))))
 
 (defn game! []
   (comm/inc-money! {:time (time-in-frame)})
-  ;; (run-merchant!)
-  ;; (run-manufacturer!)
-  ;; (run-user!)
+  (run-processor!)
+  (run-manufacturer!)
+  (run-vendor!)
   (reset-perf-time!)
   (js/requestAnimationFrame game!))

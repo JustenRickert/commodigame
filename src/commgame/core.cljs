@@ -38,8 +38,8 @@
   [{:route "#/welcome" :title "Welcome"}
    {:route "#/user" :title "User"}
    {:route "#/processor" :title "Processor"}
-   {:route "#/vendor" :title "Vendor"}
    {:route "#/manufacturing" :title "Manufacturing"}
+   {:route "#/vendor" :title "Vendor"}
    {:route "#/upgrade" :title "Upgrades"}])
 
 (defn- href-datum-to-a [d]
@@ -59,14 +59,6 @@
     [:h1 "Processor"]
     [render/processor-page]]])
 
-(defn vendor []
-  [:div
-   [:div.sidebar
-    [list-all-href-but "Vendor"]]
-   [:div.content
-    [:h1 "Vendor"]
-    [render/vendor-page]]])
-
 (defn manufacturing []
   [:div
    [:div.sidebar
@@ -74,6 +66,14 @@
    [:div.content
     [:h1 "Manufacturing"]
     [render/manufacturing-page]]])
+
+(defn vendor []
+  [:div
+   [:div.sidebar
+    [list-all-href-but "Vendor"]]
+   [:div.content
+    [:h1 "Vendor"]
+    [render/vendor-page]]])
 
 (defn upgrade []
   [:div
