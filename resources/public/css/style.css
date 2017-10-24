@@ -21,7 +21,7 @@ a:hover {
         top: 0;
         left: 0;
         bottom: 0;
-        width: 6rem;
+        width: 8rem;
         text-align: left;
     }
 }
@@ -33,7 +33,7 @@ a:hover {
 
 @media (min-width: 48rem) {
     .content {
-        margin-left: 6rem;
+        margin-left: 8rem;
         margin-right: 4rem;
     }
 }

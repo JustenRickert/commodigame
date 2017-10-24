@@ -12,7 +12,8 @@
            :comm         (into {}
                                (for [[title item] (merge data/b-comm
                                                          data/c-comm)]
-                                 {title (assoc item :quan 0)}))}))
+                                 {title (-> item
+                                            (assoc :quan 0))}))}))
 
 (defn c-comm []
   (into {}

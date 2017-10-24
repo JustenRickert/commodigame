@@ -1,6 +1,7 @@
 (ns commgame.render
   (:require [commgame.state.user :as user]
             [commgame.state.data :as data]
+            [commgame.state.commodities :as comm]
             [commgame.state.merchant :as merchant]
             [commgame.state.vendor :as vendor]
             [commgame.component.table :as table]
@@ -166,19 +167,6 @@
         [:span "No possible combinations yet!"]
         component))]])
 
-(defn user-money []
-  [:div.money "$" (string/format "%.2f" (:money @user/state))])
-
-;;; RENDER PAGE
-
-(defn user-page []
-  [:div.page
-   [user-money]
-   #_[comm-block-ul]
-   [b-comm-market]
-   [table/comm-table]
-   [comb-comm-market]])
-
 (defn merchant-timers []
   [:ul
    (for [[title merch] @merchant/state]
@@ -186,18 +174,35 @@
        ^{:key (str "timer" title)}
        [:li title " " (string/format "%.1f" (:time-until merch))]))])
 
-(defn merchant-page []
+(defn user-money []
+  [:div.money "$" (string/format "%.2f" (:amount @comm/money))])
+
+;;; RENDER PAGE
+
+(defn user-page []
   [:div.page
    [user-money]
-   [merchant-block-ul]
-   [merchant-market]
-   [merchant-timers]])
+   [table/b-comm]
+   [table/c-comm]])
+
+(defn processor-page []
+  [:div.page
+   [user-money]
+   #_[table/processor]
+   #_[merchant-block-ul]
+   #_[merchant-market]
+   #_[merchant-timers]])
 
 (defn vendor-page []
   [:div.page
    [user-money]
    [c-comm-block-ul]
    [c-comm-vendor]])
+
+(defn manufacturing-page []
+  [:div.page
+   [user-money]
+   #_[table/manufacturers]])
 
 (defn upgrade-page []
   [:div.page

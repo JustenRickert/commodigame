@@ -2,7 +2,7 @@
   (:require-macros [secretary.core :refer [defroute]])
   (:import goog.History)
   (:require [clojure.string :as string]
-            [reagent.core :as reagent :refer [atom]]
+            [reagent.core :as r :refer [atom]]
             [secretary.core :as secretary]
             [goog.events :as events]
             [goog.history.EventType :as EventType]
@@ -28,16 +28,18 @@
   (defroute "/" [] (swap! app-state assoc :page :welcome))
   (defroute "/welcome" [] (swap! app-state assoc :page :welcome))
   (defroute "/user" [] (swap! app-state assoc :page :user))
-  (defroute "/merchant" [] (swap! app-state assoc :page :merchant))
+  (defroute "/processor" [] (swap! app-state assoc :page :processor))
   (defroute "/vendor" [] (swap! app-state assoc :page :vendor))
+  (defroute "/manufacturing" [] (swap! app-state assoc :page :manufacturing))
   (defroute "/upgrade" [] (swap! app-state assoc :page :upgrade))
   (hook-browser-navigation!))
 
 (def href-data
   [{:route "#/welcome" :title "Welcome"}
    {:route "#/user" :title "User"}
-   {:route "#/merchant" :title "Merchant"}
+   {:route "#/processor" :title "Processor"}
    {:route "#/vendor" :title "Vendor"}
+   {:route "#/manufacturing" :title "Manufacturing"}
    {:route "#/upgrade" :title "Upgrades"}])
 
 (defn- href-datum-to-a [d]
@@ -49,13 +51,13 @@
              (filter #(not= (:title %) current-title))
              (map href-datum-to-a))])
 
-(defn merchant []
+(defn processor []
   [:div
    [:div.sidebar
-    [list-all-href-but "Merchant"]]
+    [list-all-href-but "Processor"]]
    [:div.content
-    [:h1 "Merchant"]
-    [render/merchant-page]]])
+    [:h1 "Processor"]
+    [render/processor-page]]])
 
 (defn vendor []
   [:div
@@ -64,6 +66,14 @@
    [:div.content
     [:h1 "Vendor"]
     [render/vendor-page]]])
+
+(defn manufacturing []
+  [:div
+   [:div.sidebar
+    [list-all-href-but "Manufacturing"]]
+   [:div.content
+    [:h1 "Manufacturing"]
+    [render/manufacturing-page]]])
 
 (defn upgrade []
   [:div
@@ -97,14 +107,15 @@
 (defmulti current-page #(@app-state :page))
 (defmethod current-page :default [] [welcome])
 (defmethod current-page :user [] [user])
-(defmethod current-page :merchant [] [merchant])
+(defmethod current-page :processor [] [processor])
+(defmethod current-page :manufacturing [] [manufacturing])
 (defmethod current-page :vendor [] [vendor])
 (defmethod current-page :welcome [] [welcome])
 (defmethod current-page :upgrade [] [upgrade])
 
 (app-routes)
-(reagent/render-component [current-page]
-                          (. js/document (getElementById "app")))
+(r/render-component [current-page]
+                    (. js/document (getElementById "app")))
 (loop/game!)
 
 (defn on-js-reload
